@@ -1,0 +1,1884 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Propuesta Q-Leap para Qurable Push Copilot: recomendaciones inteligentes de notificaciones push con revisión humana.">
+  <title>Qurable Push Copilot · Propuesta Q-Leap</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect x=%228%22 y=%228%22 width=%2248%22 height=%2248%22 rx=%2215%22 fill=%22%23ee6c26%22/><path d=%22M21 34h22M32 23v22%22 stroke=%22%23181716%22 stroke-width=%226%22 stroke-linecap=%22round%22/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f7f3e9;
+      --surface: #fffdf8;
+      --surface-soft: #f0ece1;
+      --border: #24221f;
+      --text: #181716;
+      --text-dim: #686158;
+      --orange: #ef6a2e;
+      --orange-soft: #ffe7d8;
+      --blue: #2862c4;
+      --blue-soft: #e5edff;
+      --sage: #bdc9a7;
+      --sage-soft: #edf2e7;
+      --yellow: #f2cd65;
+      --yellow-soft: #fff5d2;
+      --red: #d84a3a;
+      --shadow: 7px 7px 0 var(--border);
+      --shadow-small: 4px 4px 0 var(--border);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      overflow-x: hidden;
+      color: var(--text);
+      background: var(--bg);
+      font-family: "Bricolage Grotesque", sans-serif;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      opacity: .25;
+      background-image:
+        linear-gradient(rgba(24, 23, 22, .07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(24, 23, 22, .07) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+
+    button { font: inherit; }
+    strong.product-term { font-weight: 800; }
+
+    .progress {
+      position: fixed;
+      inset: 0 auto auto 0;
+      z-index: 40;
+      width: 0;
+      height: 5px;
+      background: var(--orange);
+      transition: width .15s linear;
+    }
+
+    .topbar {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      max-width: calc(100vw - 32px);
+      padding: 8px 12px;
+      transform: translateX(-50%);
+      border: 1.5px solid var(--border);
+      border-radius: 999px;
+      background: rgba(255, 253, 248, .94);
+      box-shadow: 0 8px 24px rgba(24, 23, 22, .08);
+      backdrop-filter: blur(12px);
+      font-family: "Azeret Mono", monospace;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .view-switch {
+      position: fixed;
+      top: 18px;
+      right: 20px;
+      z-index: 35;
+      display: flex;
+      padding: 3px;
+      border: 1.5px solid var(--border);
+      border-radius: 999px;
+      background: rgba(255, 253, 248, .96);
+      box-shadow: 0 8px 24px rgba(24, 23, 22, .08);
+      backdrop-filter: blur(12px);
+    }
+
+    .view-button {
+      min-height: 44px;
+      padding: 7px 11px;
+      border: 0;
+      border-radius: 999px;
+      color: var(--text-dim);
+      background: transparent;
+      cursor: pointer;
+      font: 700 10px "Azeret Mono", monospace;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .view-button[aria-selected="true"] {
+      color: var(--surface);
+      background: var(--border);
+    }
+
+    body[data-active-view="vision"] .slide[data-view="technical"],
+    body[data-active-view="technical"] .slide:not([data-view="technical"]) {
+      display: none;
+    }
+
+    .topbar-dot {
+      width: 8px;
+      height: 8px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: var(--orange);
+    }
+
+    .chapter {
+      overflow: hidden;
+      color: var(--text-dim);
+      text-overflow: ellipsis;
+    }
+
+    .chapter::before {
+      content: "·";
+      margin-right: 10px;
+      color: var(--border);
+    }
+
+    .slide-count { color: var(--text-dim); }
+
+    main { width: 100%; }
+    .slide {
+      position: relative;
+      display: grid;
+      align-content: center;
+      width: min(1440px, 100%);
+      min-height: 100vh;
+      min-width: 0;
+      margin: 0 auto;
+      padding: clamp(94px, 10vh, 112px) clamp(24px, 4vw, 64px) clamp(54px, 7vh, 74px);
+    }
+
+    .eyebrow,
+    .status,
+    .meta-chip {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      gap: 7px;
+      border: 1.5px solid var(--border);
+      border-radius: 999px;
+      font-family: "Azeret Mono", monospace;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow {
+      padding: 6px 10px;
+      background: var(--surface);
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--orange);
+    }
+
+    .status { padding: 5px 9px; }
+    .status.existing { background: var(--sage-soft); }
+    .status.proposed { background: var(--orange-soft); }
+    .status.pilot { background: var(--blue-soft); }
+    .meta-chip { padding: 5px 8px; background: var(--surface-soft); color: var(--text-dim); }
+
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      max-width: 830px;
+      margin: 26px 0 20px;
+      font-size: clamp(52px, 6.7vw, 96px);
+      font-weight: 800;
+      line-height: .92;
+      letter-spacing: -.055em;
+    }
+
+    h1 em {
+      color: var(--orange);
+      font-style: normal;
+    }
+
+    h2 {
+      max-width: 1120px;
+      margin-bottom: 22px;
+      font-size: clamp(38px, 4.6vw, 66px);
+      line-height: .98;
+      letter-spacing: -.045em;
+    }
+
+    h3 {
+      margin-bottom: 10px;
+      font-size: 24px;
+      line-height: 1.05;
+      letter-spacing: -.025em;
+    }
+
+    p { line-height: 1.45; }
+    .lead {
+      max-width: 850px;
+      margin-bottom: 0;
+      color: var(--text-dim);
+      font-size: clamp(20px, 2.15vw, 30px);
+      line-height: 1.25;
+    }
+
+    .hero-grid,
+    .split,
+    .architecture-grid,
+    .scope-grid {
+      display: grid;
+      min-width: 0;
+      gap: clamp(28px, 4vw, 58px);
+      align-items: center;
+    }
+
+    .hero-grid { grid-template-columns: minmax(390px, .78fr) minmax(560px, 1.22fr); }
+    .split { grid-template-columns: minmax(380px, .85fr) minmax(520px, 1.15fr); }
+    .architecture-grid { grid-template-columns: minmax(260px, .8fr) minmax(300px, 1fr) minmax(260px, .8fr); }
+    .scope-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; }
+
+    .hero-copy,
+    .hero-grid > *,
+    .split > *,
+    .architecture-grid > *,
+    .scope-grid > *,
+    .cards > *,
+    .planner-grid > * { min-width: 0; }
+
+    .hero-flow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 28px;
+    }
+
+    .flow-pill {
+      padding: 7px 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 999px;
+      background: var(--surface);
+      font: 700 10px "Azeret Mono", monospace;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .flow-arrow { align-self: center; color: var(--orange); font-weight: 800; }
+
+    .panel {
+      min-width: 0;
+      border: 2px solid var(--border);
+      border-radius: 22px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 17px 19px;
+      border-bottom: 1.5px solid var(--border);
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .panel-title-icon {
+      display: grid;
+      width: 30px;
+      height: 30px;
+      flex: 0 0 auto;
+      place-items: center;
+      border: 1.5px solid var(--border);
+      border-radius: 9px;
+      background: var(--orange-soft);
+    }
+
+    .planner-shell { transform: rotate(1deg); }
+    .planner-shell:hover { transform: rotate(0); }
+    .planner-shell,
+    .planner-shell:hover { transition: transform .25s ease; }
+
+    .planner-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      min-width: 0;
+    }
+
+    .day-column {
+      min-width: 0;
+      padding: 16px;
+      border-right: 1.5px solid var(--border);
+    }
+
+    .day-column:last-child { border-right: 0; }
+    .day-label {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 13px;
+      font: 700 10px "Azeret Mono", monospace;
+      text-transform: uppercase;
+    }
+
+    .day-label b { font-size: 18px; }
+
+    .mini-push {
+      min-width: 0;
+      margin-bottom: 10px;
+      padding: 13px;
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      background: var(--surface-soft);
+    }
+
+    .mini-push.orange { background: var(--orange-soft); }
+    .mini-push.blue { background: var(--blue-soft); }
+    .mini-push.sage { background: var(--sage-soft); }
+    .mini-push time {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--text-dim);
+      font: 700 9px "Azeret Mono", monospace;
+    }
+
+    .mini-push strong { display: block; margin-bottom: 5px; line-height: 1.1; }
+    .mini-push p { margin: 0; color: var(--text-dim); font-size: 12px; line-height: 1.35; }
+
+    .manual-path {
+      display: grid;
+      gap: 11px;
+    }
+
+    .manual-step {
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      padding: 14px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      background: var(--surface);
+    }
+
+    .manual-step b {
+      display: grid;
+      width: 36px;
+      height: 36px;
+      place-items: center;
+      border-radius: 10px;
+      background: var(--surface-soft);
+      font: 700 11px "Azeret Mono", monospace;
+    }
+
+    .manual-step strong { display: block; margin-bottom: 3px; font-size: 18px; }
+    .manual-step span { color: var(--text-dim); font-size: 14px; }
+    .manual-step i { color: var(--orange); font-style: normal; font-weight: 800; }
+
+    .decision-note {
+      padding: 26px;
+      border: 2px solid var(--border);
+      border-radius: 20px;
+      background: var(--yellow-soft);
+      box-shadow: var(--shadow-small);
+    }
+
+    .decision-note blockquote {
+      margin: 18px 0 22px;
+      font-size: clamp(26px, 3vw, 42px);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -.035em;
+    }
+
+    .decision-note p { margin: 0; color: var(--text-dim); font-size: 16px; }
+
+    .inbox {
+      margin-top: 24px;
+      overflow: hidden;
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tab {
+      padding: 7px 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--text-dim);
+      font: 700 10px "Azeret Mono", monospace;
+      text-transform: uppercase;
+    }
+
+    .tab.active { background: var(--border); color: var(--surface); }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      min-width: 0;
+      gap: 18px;
+    }
+
+    .opportunity-card,
+    .info-card,
+    .metric-card,
+    .scope-card,
+    .guardrail {
+      min-width: 0;
+      border: 1.5px solid var(--border);
+      border-radius: 18px;
+      background: var(--surface);
+    }
+
+    .opportunity-card {
+      position: relative;
+      padding: 20px;
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+
+    .opportunity-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-small);
+    }
+
+    .opportunity-card.featured { background: var(--orange-soft); }
+    .opportunity-card.blue { background: var(--blue-soft); }
+    .opportunity-card.sage { background: var(--sage-soft); }
+
+    .card-topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .priority {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font: 700 9px "Azeret Mono", monospace;
+      text-transform: uppercase;
+    }
+
+    .priority::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--red);
+    }
+
+    .opportunity-card h3 { max-width: 320px; margin-bottom: 12px; font-size: 27px; }
+    .opportunity-card > p { min-height: 58px; color: var(--text-dim); font-size: 14px; }
+
+    .signal-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 16px 0;
+    }
+
+    .signal {
+      padding: 5px 7px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(255, 253, 248, .72);
+      font: 700 9px "Azeret Mono", monospace;
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 12px;
+      padding-top: 13px;
+      border-top: 1px solid rgba(36, 34, 31, .3);
+    }
+
+    .card-footer small { color: var(--text-dim); }
+    .card-footer strong { display: block; margin-top: 3px; }
+    .arrow-button {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      flex: 0 0 auto;
+      place-items: center;
+      border: 1.5px solid var(--border);
+      border-radius: 50%;
+      background: var(--surface);
+      box-shadow: 2px 2px 0 var(--border);
+      font-weight: 800;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(320px, .8fr);
+      min-width: 0;
+      gap: 20px;
+      margin-top: 24px;
+    }
+
+    .detail-main,
+    .evidence-panel {
+      min-width: 0;
+      padding: 22px;
+    }
+
+    .push-preview {
+      display: grid;
+      grid-template-columns: 54px minmax(0, 1fr);
+      gap: 13px;
+      margin: 18px 0;
+      padding: 17px;
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      background: var(--surface-soft);
+    }
+
+    .app-icon {
+      display: grid;
+      width: 54px;
+      height: 54px;
+      place-items: center;
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      background: var(--orange);
+      font-size: 25px;
+      font-weight: 800;
+    }
+
+    .push-preview small { color: var(--text-dim); }
+    .push-preview strong { display: block; margin: 5px 0; font-size: 17px; }
+    .push-preview p { margin: 0; color: var(--text-dim); font-size: 14px; }
+
+    .decision-fields {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .field {
+      min-width: 0;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+    }
+
+    .field small {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--text-dim);
+      font: 700 9px "Azeret Mono", monospace;
+      text-transform: uppercase;
+    }
+
+    .field strong { font-size: 14px; }
+    .evidence-panel { background: var(--blue-soft); }
+    .evidence-panel h3 { margin-bottom: 18px; }
+
+    .evidence-row {
+      display: grid;
+      grid-template-columns: 32px minmax(0, 1fr);
+      gap: 11px;
+      align-items: start;
+      padding: 12px 0;
+      border-top: 1px solid rgba(36, 34, 31, .25);
+    }
+
+    .evidence-row:first-of-type { border-top: 0; }
+    .evidence-row b {
+      display: grid;
+      width: 28px;
+      height: 28px;
+      place-items: center;
+      border-radius: 8px;
+      background: var(--surface);
+      font: 700 10px "Azeret Mono", monospace;
+    }
+
+    .evidence-row strong { display: block; margin-bottom: 3px; }
+    .evidence-row span { color: var(--text-dim); font-size: 13px; }
+
+    .action-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 18px;
+    }
+
+    .action {
+      padding: 11px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 11px;
+      background: var(--surface);
+      cursor: pointer;
+      font: 700 10px "Azeret Mono", monospace;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+
+    .action:hover { transform: translateY(-2px); box-shadow: 2px 3px 0 var(--border); }
+    .action.primary { background: var(--orange); }
+    .action:disabled { cursor: default; opacity: .75; transform: none; box-shadow: none; }
+
+    .approval-grid {
+      display: grid;
+      grid-template-columns: minmax(330px, .72fr) minmax(520px, 1.28fr);
+      min-width: 0;
+      gap: 22px;
+      margin-top: 24px;
+      align-items: stretch;
+    }
+
+    .approval-card,
+    .calendar-panel { min-width: 0; padding: 22px; }
+    .approval-card { background: var(--yellow-soft); }
+    .approval-card h3 { font-size: 30px; }
+    .approval-card p { color: var(--text-dim); }
+
+    .status-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 20px 0;
+      padding: 13px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+    }
+
+    #demoStatus { color: var(--orange); }
+    .calendar-panel { overflow: hidden; }
+    .week-row {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      min-width: 0;
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .week-day {
+      min-width: 0;
+      min-height: 230px;
+      padding: 12px;
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .week-day:last-child { border-right: 0; }
+    .week-day > b {
+      display: block;
+      margin-bottom: 11px;
+      font: 700 10px "Azeret Mono", monospace;
+      text-transform: uppercase;
+    }
+
+    .calendar-event {
+      padding: 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 11px;
+      background: var(--blue-soft);
+      font-size: 12px;
+      line-height: 1.3;
+    }
+
+    .calendar-event small { display: block; margin-bottom: 4px; color: var(--text-dim); }
+    .calendar-event.result {
+      opacity: .24;
+      background: var(--orange-soft);
+      transform: scale(.96);
+      transform-origin: top center;
+      transition: opacity .3s ease, transform .3s ease;
+    }
+
+    .demo-result.is-scheduled .calendar-event.result {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .demo-caption {
+      margin: 13px 0 0;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+
+    .architecture-grid { margin-top: 24px; }
+    .architecture-column { display: grid; gap: 10px; min-width: 0; }
+    .architecture-title { margin-bottom: 3px; }
+
+    .architecture-node {
+      min-width: 0;
+      padding: 15px;
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      background: var(--surface);
+    }
+
+    .architecture-node strong { display: block; margin-bottom: 4px; }
+    .architecture-node span { color: var(--text-dim); font-size: 13px; }
+    .architecture-node.existing { background: var(--sage-soft); }
+    .architecture-node.proposed { background: var(--orange-soft); }
+    .architecture-node.pilot { background: var(--blue-soft); }
+
+    .agent-core {
+      padding: 24px;
+      border: 2px solid var(--border);
+      border-radius: 22px;
+      background: var(--orange-soft);
+      box-shadow: var(--shadow-small);
+      text-align: center;
+    }
+
+    .agent-orbit {
+      display: grid;
+      width: 96px;
+      height: 96px;
+      margin: 0 auto 16px;
+      place-items: center;
+      border: 2px solid var(--border);
+      border-radius: 50%;
+      background: var(--orange);
+      font: 800 30px "Azeret Mono", monospace;
+    }
+
+    .agent-core h3 { font-size: 30px; }
+    .agent-core p { margin: 0; color: var(--text-dim); }
+
+    .connector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--orange);
+      font-size: 28px;
+      font-weight: 800;
+    }
+
+    .guardrails {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 22px;
+    }
+
+    .guardrail {
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr);
+      gap: 12px;
+      padding: 16px;
+    }
+
+    .guardrail b {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border-radius: 10px;
+      background: var(--surface-soft);
+      font: 700 10px "Azeret Mono", monospace;
+    }
+
+    .guardrail strong { display: block; margin-bottom: 4px; font-size: 18px; }
+    .guardrail p { margin: 0; color: var(--text-dim); font-size: 13px; }
+
+    .autonomy-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-top: 16px;
+      overflow: hidden;
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+    }
+
+    .autonomy-step {
+      padding: 15px 18px;
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .autonomy-step:last-child { border-right: 0; }
+    .autonomy-step.active { background: var(--yellow-soft); }
+    .autonomy-step span { font: 700 9px "Azeret Mono", monospace; color: var(--text-dim); }
+    .autonomy-step strong { display: block; margin-top: 5px; }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 22px;
+    }
+
+    .metric-card {
+      padding: 18px;
+      background: var(--surface);
+    }
+
+    .metric-card:nth-child(1) { background: var(--orange-soft); }
+    .metric-card:nth-child(2) { background: var(--yellow-soft); }
+    .metric-card:nth-child(3) { background: var(--sage-soft); }
+    .metric-card:nth-child(4) { background: var(--blue-soft); }
+    .metric-card b { display: block; margin-bottom: 12px; font: 800 12px "Azeret Mono", monospace; }
+    .metric-card strong { display: block; margin-bottom: 6px; font-size: 29px; line-height: 1; }
+    .metric-card p { margin: 0; color: var(--text-dim); font-size: 13px; }
+
+    .validation-note {
+      margin-top: 15px;
+      padding: 14px 17px;
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      background: var(--surface);
+      color: var(--text-dim);
+    }
+
+    .scope-grid { margin-top: 22px; gap: 16px; }
+    .scope-card { padding: 19px; }
+    .scope-card.existing { background: var(--sage-soft); }
+    .scope-card.proposed { background: var(--orange-soft); }
+    .scope-card.pilot { background: var(--blue-soft); }
+    .scope-card h3 { margin: 14px 0 12px; }
+    .scope-card ul { margin: 0; padding-left: 20px; color: var(--text-dim); }
+    .scope-card li { margin: 8px 0; line-height: 1.35; }
+
+    .roadmap {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-top: 16px;
+      overflow: hidden;
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      background: var(--surface);
+    }
+
+    .roadmap-step {
+      position: relative;
+      min-width: 0;
+      padding: 16px 18px;
+      border-right: 1px solid var(--border);
+    }
+
+    .roadmap-step:last-child { border-right: 0; }
+    .roadmap-step span { color: var(--orange); font: 700 9px "Azeret Mono", monospace; }
+    .roadmap-step strong { display: block; margin: 6px 0 4px; }
+    .roadmap-step p { margin: 0; color: var(--text-dim); font-size: 13px; }
+
+    .concept-map {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 22px;
+    }
+
+    .concept-card {
+      position: relative;
+      min-width: 0;
+      padding: 18px;
+      border: 1.5px solid var(--border);
+      border-radius: 18px;
+      background: var(--sage-soft);
+    }
+
+    .concept-card.focus {
+      background: var(--orange-soft);
+      box-shadow: var(--shadow-small);
+      transform: translateY(-5px);
+    }
+
+    .concept-card h3 { margin: 14px 0 9px; }
+    .concept-card p { margin: 0; color: var(--text-dim); font-size: 13px; }
+
+    .closing {
+      min-height: 100vh;
+      justify-items: center;
+      text-align: center;
+    }
+
+    .closing h2 { max-width: 1080px; font-size: clamp(50px, 7.8vw, 108px); }
+    .closing .lead { max-width: 760px; }
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 30px;
+      padding: 13px 17px;
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      background: var(--orange);
+      box-shadow: var(--shadow-small);
+      font: 700 11px "Azeret Mono", monospace;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .hint {
+      position: absolute;
+      right: 5vw;
+      bottom: 24px;
+      color: var(--text-dim);
+      font: 600 9px "Azeret Mono", monospace;
+      text-transform: uppercase;
+    }
+
+    .source-note {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      align-items: center;
+      margin: 0 0 22px;
+      color: var(--text-dim);
+      font: 600 10px/1.4 "Azeret Mono", monospace;
+    }
+
+    .source-note a {
+      color: var(--blue);
+      font-weight: 700;
+    }
+
+    .capability-grid,
+    .mapping-grid {
+      display: grid;
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .capability-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .mapping-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    .api-card,
+    .mapping-card {
+      min-width: 0;
+      padding: 18px;
+      border: 2px solid var(--border);
+      border-radius: 18px;
+      background: var(--surface);
+      box-shadow: var(--shadow-small);
+    }
+
+    .api-card:nth-child(2n) { background: var(--blue-soft); }
+    .api-card:nth-child(3n) { background: var(--sage-soft); }
+
+    .api-card h3,
+    .mapping-card h3 { font-size: 21px; }
+
+    .api-card p,
+    .mapping-card p {
+      margin-bottom: 12px;
+      color: var(--text-dim);
+      font-size: 14px;
+    }
+
+    .endpoint-list {
+      display: grid;
+      gap: 6px;
+    }
+
+    .endpoint {
+      display: block;
+      width: 100%;
+      padding: 6px 8px;
+      overflow-wrap: anywhere;
+      border: 1px solid rgba(36, 34, 31, .24);
+      border-radius: 8px;
+      color: var(--text);
+      background: rgba(255, 253, 248, .72);
+      font: 700 11px/1.35 "Azeret Mono", monospace;
+    }
+
+    .mapping-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 16px;
+    }
+
+    .mapping-card.focus {
+      background: var(--orange-soft);
+      box-shadow: 6px 6px 0 var(--orange), 9px 9px 0 var(--border);
+    }
+
+    .mapping-side {
+      min-width: 0;
+      padding-left: 14px;
+      border-left: 1.5px solid var(--border);
+    }
+
+    .mapping-side small {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--text-dim);
+      font: 700 9px "Azeret Mono", monospace;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .mapping-side strong {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 15px;
+      line-height: 1.2;
+    }
+
+    .mapping-side p { margin: 0; font-size: 13px; }
+
+    .technical-flow {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 10px;
+      align-items: stretch;
+      margin-top: 28px;
+    }
+
+    .technical-step {
+      position: relative;
+      min-width: 0;
+      padding: 16px 13px;
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      background: var(--surface);
+    }
+
+    .technical-step::after {
+      content: "→";
+      position: absolute;
+      top: 50%;
+      right: -10px;
+      z-index: 2;
+      transform: translate(50%, -50%);
+      color: var(--orange);
+      font-weight: 800;
+    }
+
+    .technical-step:last-child::after { display: none; }
+    .technical-step.new { background: var(--orange-soft); }
+    .technical-step.pilot { background: var(--blue-soft); }
+    .technical-step.existing { background: var(--sage-soft); }
+
+    .technical-step span {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--text-dim);
+      font: 700 8px "Azeret Mono", monospace;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .technical-step strong {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 15px;
+      line-height: 1.1;
+    }
+
+    .technical-step p {
+      margin: 0;
+      color: var(--text-dim);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .build-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .build-column {
+      padding: 20px;
+      border: 2px solid var(--border);
+      border-radius: 18px;
+      background: var(--surface);
+      box-shadow: var(--shadow-small);
+    }
+
+    .build-column.now { background: var(--sage-soft); }
+    .build-column.next { background: var(--orange-soft); }
+    .build-column.roadmap-column { background: var(--blue-soft); }
+
+    .build-column ul {
+      display: grid;
+      gap: 9px;
+      margin: 16px 0 0;
+      padding-left: 18px;
+      color: var(--text-dim);
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    .certainty {
+      margin-top: 18px;
+      padding: 12px 15px;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      background: var(--yellow-soft);
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+
+    @media (max-width: 1100px) {
+      .hero-grid,
+      .split,
+      .approval-grid { grid-template-columns: 1fr; }
+      .hero-grid { padding-top: 36px; }
+      .planner-shell { transform: none; }
+      .architecture-grid { grid-template-columns: 1fr; gap: 15px; }
+      .connector { transform: rotate(90deg); }
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .capability-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .technical-flow { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .technical-step:nth-child(4)::after { display: none; }
+    }
+
+    @media (max-width: 820px) {
+      .slide { align-content: start; }
+      .cards,
+      .guardrails,
+      .scope-grid,
+      .concept-map { grid-template-columns: 1fr; }
+      .concept-card.focus { transform: none; }
+      .opportunity-card > p { min-height: 0; }
+      .planner-grid { grid-template-columns: 1fr; }
+      .day-column { border-right: 0; border-bottom: 1.5px solid var(--border); }
+      .day-column:last-child { border-bottom: 0; }
+      .detail-grid { grid-template-columns: 1fr; }
+      .week-row { grid-template-columns: repeat(5, minmax(150px, 1fr)); overflow-x: auto; }
+      .calendar-panel { overflow-x: auto; }
+      .decision-fields { grid-template-columns: 1fr; }
+      .autonomy-strip,
+      .roadmap { grid-template-columns: 1fr; }
+      .mapping-grid,
+      .build-grid { grid-template-columns: 1fr; }
+      .technical-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .technical-step:nth-child(2n)::after { display: none; }
+      .autonomy-step,
+      .roadmap-step { border-right: 0; border-bottom: 1px solid var(--border); }
+      .autonomy-step:last-child,
+      .roadmap-step:last-child { border-bottom: 0; }
+    }
+
+    @media (max-width: 560px) {
+      .slide { padding: 94px 18px 54px; }
+      h1 { font-size: clamp(34px, 9.5vw, 40px); }
+      h2 { font-size: clamp(32px, 9vw, 38px); }
+      .lead { font-size: 20px; }
+      .topbar {
+        left: 12px;
+        right: auto;
+        max-width: 92px;
+        transform: none;
+        justify-content: center;
+      }
+      .topbar > span:nth-child(2),
+      .topbar-dot,
+      .chapter { display: none; }
+      .view-switch { top: 18px; right: 12px; }
+      .view-button { padding: 7px 9px; }
+      .planner-shell,
+      .panel { border-radius: 16px; box-shadow: 4px 4px 0 var(--border); }
+      .manual-step { grid-template-columns: 36px minmax(0, 1fr); }
+      .manual-step i { display: none; }
+      .metrics { grid-template-columns: 1fr; }
+      .action-bar { display: grid; grid-template-columns: 1fr; }
+      .action { width: 100%; }
+      .hint { display: none; }
+      .capability-grid,
+      .technical-flow { grid-template-columns: 1fr; }
+      .technical-step::after { display: none; }
+      .mapping-card { grid-template-columns: 1fr; }
+      .mapping-side {
+        padding: 12px 0 0;
+        border-top: 1.5px solid var(--border);
+        border-left: 0;
+      }
+    }
+
+    @media (max-height: 860px) and (min-width: 821px) {
+      .slide { align-content: start; padding-top: 82px; padding-bottom: 42px; }
+      h2 { font-size: clamp(36px, 4vw, 58px); }
+      .lead { font-size: clamp(18px, 1.8vw, 25px); }
+      .opportunity-card { padding: 17px; }
+      .guardrail { padding: 13px; }
+    }
+
+    @media print {
+      .progress,
+      .topbar,
+      .view-switch,
+      .hint { display: none; }
+      .slide { min-height: auto; padding: 50px; break-after: page; }
+      body[data-active-view] .slide { display: grid; }
+      body::before { display: none; }
+    }
+  </style>
+</head>
+<body data-active-view="vision">
+  <div class="progress" id="progress"></div>
+  <div class="topbar">
+    <span class="topbar-dot"></span>
+    <span>Qurable Push Copilot</span>
+    <span class="chapter" id="chapter">Propuesta</span>
+    <span class="slide-count" id="slideCount">01 / 10</span>
+  </div>
+  <div class="view-switch" role="tablist" aria-label="Vista de la propuesta">
+    <button class="view-button" type="button" role="tab" aria-selected="true" data-view-button="vision">Visión</button>
+    <button class="view-button" type="button" role="tab" aria-selected="false" data-view-button="technical">Técnica</button>
+  </div>
+
+  <main data-qa-main>
+    <section class="slide" data-chapter="Propuesta">
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <span class="eyebrow">Brainstorming · MVP Q-Leap de 1 día</span>
+          <h1>Cuatro ideas para activar mejor los <em>datos de clientes.</em></h1>
+          <p class="lead">Q-Leap profundiza primero <strong>Push complejas inteligentes</strong>: qué push conviene enviar mañana, a quién y por qué.</p>
+          <div class="hero-flow" aria-label="Conceptos del brainstorming">
+            <span class="flow-pill">Audiencias inteligentes</span>
+            <span class="flow-pill">Dashboard a medida</span>
+            <span class="flow-pill" style="background:var(--orange-soft)">Push complejas</span>
+            <span class="flow-pill">Funnel</span>
+          </div>
+        </div>
+
+        <div class="panel planner-shell" data-qa-card>
+          <div class="panel-header">
+            <div class="panel-title"><span class="panel-title-icon">↗</span> Plan recomendado</div>
+            <span class="status proposed">Foco del MVP</span>
+          </div>
+          <div class="planner-grid">
+            <div class="day-column">
+              <div class="day-label"><span>Mañana</span><b>24</b></div>
+              <article class="mini-push orange">
+                <time>18:30 · Prioridad alta</time>
+                <strong>Reactivación con Puntos</strong>
+                <p>1.240 clientes · Riesgo de abandono alto</p>
+              </article>
+              <article class="mini-push">
+                <time>20:00 · Oportunidad</time>
+                <strong>Cupón próximo a vencer</strong>
+                <p>680 clientes · Probabilidad de canje alta</p>
+              </article>
+            </div>
+            <div class="day-column">
+              <div class="day-label"><span>Viernes</span><b>25</b></div>
+              <article class="mini-push sage">
+                <time>12:15 · Afinidad</time>
+                <strong>Beneficio de fin de semana</strong>
+                <p>Segmento frecuente · 2.840 clientes</p>
+              </article>
+            </div>
+            <div class="day-column">
+              <div class="day-label"><span>Lunes</span><b>28</b></div>
+              <article class="mini-push blue">
+                <time>10:00 · Bienvenida</time>
+                <strong>Primer canje</strong>
+                <p>410 clientes nuevos con Puntos disponibles</p>
+              </article>
+            </div>
+          </div>
+        </div>
+      </div>
+      <span class="hint">Scroll · Flechas para navegar</span>
+    </section>
+
+    <section class="slide" data-chapter="Problema">
+      <span class="eyebrow">01 · Problema operativo</span>
+      <h2>Marketing reconstruye cada decisión entre varios módulos.</h2>
+      <p class="lead">La información ya permite reconocer oportunidades. Audiencia, mensaje, momento y presión de contacto todavía requieren una revisión manual.</p>
+
+      <div class="split" style="margin-top:24px">
+        <div class="manual-path">
+          <article class="manual-step" data-qa-card><b>01</b><div><strong>Segmentos</strong><span>Encontrar la audiencia relevante.</span></div><i>→</i></article>
+          <article class="manual-step" data-qa-card><b>02</b><div><strong>Predicciones</strong><span>Interpretar Riesgo de abandono y Probabilidad de canje.</span></div><i>→</i></article>
+          <article class="manual-step" data-qa-card><b>03</b><div><strong>Campañas</strong><span>Revisar acciones anteriores y colisiones.</span></div><i>→</i></article>
+          <article class="manual-step" data-qa-card><b>04</b><div><strong>Difusión</strong><span>Preparar el contenido y el canal.</span></div><i>→</i></article>
+        </div>
+
+        <aside class="decision-note">
+          <span class="status existing">Base existente</span>
+          <blockquote>“¿A quién contactamos mañana, con qué mensaje y en qué horario?”</blockquote>
+          <p>La decisión tardía pierde oportunidades. La decisión apurada puede sobrecontactar al cliente.</p>
+        </aside>
+      </div>
+    </section>
+
+    <section class="slide" data-chapter="Demo">
+      <span class="eyebrow">02 · Inicio de la demo</span>
+      <h2>Marketing empieza el día con tres oportunidades listas para revisar.</h2>
+      <p class="lead">La bandeja ordena las recomendaciones por urgencia, impacto esperado y riesgo operativo.</p>
+
+      <div class="panel inbox">
+        <div class="panel-header">
+          <div class="tabs" aria-label="Horizonte de recomendaciones">
+            <span class="tab active">Mañana · 3</span>
+            <span class="tab">Esta semana · 7</span>
+            <span class="tab">Urgentes · 1</span>
+          </div>
+          <span class="status proposed">Módulo propuesto</span>
+        </div>
+        <div class="cards" style="padding:18px">
+          <article class="opportunity-card featured" data-qa-card>
+            <div class="card-topline"><span class="priority">Alta prioridad</span><span class="meta-chip">18:30</span></div>
+            <h3>Reactivar clientes con saldo disponible</h3>
+            <p>La frecuencia de compra cayó y el grupo conserva Puntos suficientes para un beneficio relevante.</p>
+            <div class="signal-list"><span class="signal">1.240 clientes</span><span class="signal">Riesgo alto</span><span class="signal">+400 Puntos</span></div>
+            <div class="card-footer"><div><small>Confianza</small><strong>Alta · 84%</strong></div><span class="arrow-button">→</span></div>
+          </article>
+          <article class="opportunity-card sage" data-qa-card>
+            <div class="card-topline"><span class="priority" style="--red:var(--orange)">Próximo vencimiento</span><span class="meta-chip">20:00</span></div>
+            <h3>Recordar un Cupón antes de su vencimiento</h3>
+            <p>Clientes con Cupón asignado y actividad reciente muestran una Probabilidad de canje alta.</p>
+            <div class="signal-list"><span class="signal">680 clientes</span><span class="signal">Vence en 48 h</span><span class="signal">Canje alto</span></div>
+            <div class="card-footer"><div><small>Confianza</small><strong>Media · 72%</strong></div><span class="arrow-button">→</span></div>
+          </article>
+          <article class="opportunity-card blue" data-qa-card>
+            <div class="card-topline"><span class="priority" style="--red:var(--blue)">Afinidad</span><span class="meta-chip">Viernes</span></div>
+            <h3>Anticipar el beneficio del fin de semana</h3>
+            <p>El Segmento concentra compras los viernes y responde mejor antes del mediodía.</p>
+            <div class="signal-list"><span class="signal">2.840 clientes</span><span class="signal">CLV relevante</span><span class="signal">12:15</span></div>
+            <div class="card-footer"><div><small>Confianza</small><strong>Media · 69%</strong></div><span class="arrow-button">→</span></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-chapter="Demo">
+      <span class="eyebrow">03 · Recomendación abierta</span>
+      <h2>Cada recomendación explica por qué conviene actuar.</h2>
+      <p class="lead">Marketing recibe la información necesaria para evaluar la decisión, ajustar el copy y confirmar las exclusiones.</p>
+
+      <div class="detail-grid">
+        <article class="panel detail-main" data-qa-card>
+          <div class="card-topline">
+            <div><span class="priority">Reactivación</span><h3 style="margin:10px 0 0">Clientes con Riesgo de abandono alto</h3></div>
+            <span class="status proposed">Recomendada</span>
+          </div>
+          <div class="push-preview">
+            <div class="app-icon">Q</div>
+            <div>
+              <small>Qurable · ahora</small>
+              <strong>Tus Puntos pueden convertirse en algo especial</strong>
+              <p>Descubrí los beneficios disponibles para este fin de semana.</p>
+            </div>
+          </div>
+          <div class="decision-fields">
+            <div class="field"><small>Audiencia</small><strong>1.240 clientes</strong></div>
+            <div class="field"><small>Horario</small><strong>Mañana · 18:30</strong></div>
+            <div class="field"><small>KPI esperado</small><strong>Reactivación</strong></div>
+            <div class="field"><small>Exclusión</small><strong>Contacto &lt; 48 h</strong></div>
+            <div class="field"><small>Confianza</small><strong>Alta · 84%</strong></div>
+            <div class="field"><small>Incentivo</small><strong>Beneficio vigente</strong></div>
+          </div>
+          <div class="action-bar">
+            <button class="action">Editar copy</button>
+            <button class="action">Otra variante</button>
+            <button class="action">Descartar</button>
+          </div>
+        </article>
+
+        <aside class="panel evidence-panel" data-qa-card>
+          <h3>Por qué aparece esta recomendación</h3>
+          <div class="evidence-row"><b>01</b><div><strong>Riesgo de abandono</strong><span>La frecuencia de compra cayó durante los últimos 30 días.</span></div></div>
+          <div class="evidence-row"><b>02</b><div><strong>Niveles de valor (CLV)</strong><span>El grupo conserva un valor futuro relevante.</span></div></div>
+          <div class="evidence-row"><b>03</b><div><strong>Puntos</strong><span>El saldo habilita una propuesta útil sin crear un incentivo nuevo.</span></div></div>
+          <div class="evidence-row"><b>04</b><div><strong>Historial de contacto</strong><span>La exclusión evita contactar clientes alcanzados en las últimas 48 horas.</span></div></div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="slide" data-chapter="Demo">
+      <span class="eyebrow">04 · Human in the loop</span>
+      <h2>Una aprobación coloca la push en el calendario.</h2>
+      <p class="lead">El MVP prepara y explica. Marketing conserva la edición, la aprobación y la programación.</p>
+
+      <div class="approval-grid demo-result" id="demoResult">
+        <article class="panel approval-card" data-qa-card>
+          <span class="status proposed">Propuesto</span>
+          <h3 style="margin-top:16px">Reactivación con Puntos</h3>
+          <p>Audiencia, copy, horario y exclusiones están listos para la revisión final.</p>
+          <div class="status-line"><span>Estado</span><strong id="demoStatus">Recomendada</strong></div>
+          <div class="action-bar">
+            <button class="action primary" id="approveButton">Aprobar y programar</button>
+            <button class="action" id="resetButton">Reiniciar</button>
+          </div>
+          <p class="demo-caption" id="demoMessage">La acción actualiza el calendario de la demo. El envío real queda fuera de esta primera validación.</p>
+        </article>
+
+        <article class="panel calendar-panel" data-qa-card>
+          <div class="panel-header" style="margin:-22px -22px 18px">
+            <div class="panel-title"><span class="panel-title-icon">□</span> Semana del 24</div>
+            <span class="meta-chip">Zona horaria local</span>
+          </div>
+          <div class="week-row">
+            <div class="week-day"><b>Jue 24</b><div class="calendar-event result"><small>18:30 · Programada</small><strong>Reactivación con Puntos</strong></div></div>
+            <div class="week-day"><b>Vie 25</b><div class="calendar-event"><small>12:15 · Borrador</small><strong>Beneficio de fin de semana</strong></div></div>
+            <div class="week-day"><b>Sáb 26</b></div>
+            <div class="week-day"><b>Dom 27</b></div>
+            <div class="week-day"><b>Lun 28</b><div class="calendar-event"><small>10:00 · Revisión</small><strong>Primer canje</strong></div></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="slide" data-chapter="Cómo funciona">
+      <span class="eyebrow">05 · Capacidad propuesta</span>
+      <h2>La recomendación combina datos existentes con una orquestación nueva.</h2>
+      <p class="lead">Las etiquetas separan la base visible hoy, la capacidad que construiría Q-Leap y el aprendizaje reservado para el piloto.</p>
+
+      <div class="architecture-grid">
+        <div class="architecture-column">
+          <div class="architecture-title"><span class="status existing">Existente</span></div>
+          <div class="architecture-node existing"><strong>Detalles del cliente</strong><span>Estadísticas, Transacciones, Puntos y Cupones.</span></div>
+          <div class="architecture-node existing"><strong>Predicciones</strong><span>Riesgo de abandono, CLV y Probabilidad de canje.</span></div>
+          <div class="architecture-node existing"><strong>Segmentos y Campañas</strong><span>Audiencias, Recompensas y actividad previa.</span></div>
+        </div>
+
+        <div>
+          <div class="connector" aria-hidden="true">→</div>
+          <article class="agent-core" data-qa-card>
+            <div class="agent-orbit">AI</div>
+            <span class="status proposed">Propuesto</span>
+            <h3>Push Copilot</h3>
+            <p>Consulta vía MCP, detecta oportunidades, compone recomendaciones y aplica políticas antes de presentarlas.</p>
+          </article>
+          <div class="connector" aria-hidden="true">→</div>
+        </div>
+
+        <div class="architecture-column">
+          <div class="architecture-title"><span class="status proposed">Propuesto</span></div>
+          <div class="architecture-node proposed"><strong>Bandeja priorizada</strong><span>Mañana, semana y oportunidades urgentes.</span></div>
+          <div class="architecture-node proposed"><strong>Revisión humana</strong><span>Editar, aprobar, programar o descartar.</span></div>
+          <div class="architecture-node pilot"><strong>Resultados · Piloto</strong><span>Respuesta, saturación y efecto incremental.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-chapter="Control">
+      <span class="eyebrow">06 · Riesgo y autonomía</span>
+      <h2>La autonomía avanza cuando cada riesgo tiene una política.</h2>
+      <p class="lead">El agente prepara recomendaciones dentro de límites verificables y deja evidencia para cada decisión.</p>
+
+      <div class="guardrails">
+        <article class="guardrail" data-qa-card><b>01</b><div><strong>Consentimiento</strong><p>Incluir únicamente clientes habilitados para recibir Push.</p></div></article>
+        <article class="guardrail" data-qa-card><b>02</b><div><strong>Frecuencia</strong><p>Caps diarios y semanales para controlar la saturación.</p></div></article>
+        <article class="guardrail" data-qa-card><b>03</b><div><strong>Quiet hours</strong><p>Horarios permitidos según mercado y zona horaria.</p></div></article>
+        <article class="guardrail" data-qa-card><b>04</b><div><strong>Colisiones</strong><p>Excluir contactos afectados por otras Campañas activas.</p></div></article>
+        <article class="guardrail" data-qa-card><b>05</b><div><strong>Datos y atributos</strong><p>Frescura mínima, campos faltantes y atributos sensibles.</p></div></article>
+        <article class="guardrail" data-qa-card><b>06</b><div><strong>Auditoría y permisos</strong><p>Registrar señales, cambios, aprobador y horario programado.</p></div></article>
+      </div>
+
+      <div class="autonomy-strip">
+        <div class="autonomy-step active"><span>Q-LEAP</span><strong>Recomendar y preparar</strong></div>
+        <div class="autonomy-step"><span>PILOTO</span><strong>Programar con aprobación</strong></div>
+        <div class="autonomy-step"><span>PRODUCTO</span><strong>Automatizar casos de bajo riesgo</strong></div>
+      </div>
+    </section>
+
+    <section class="slide" data-chapter="Validación">
+      <span class="eyebrow">07 · MVP de 1 día</span>
+      <h2>En un día demostramos el flujo de una Push compleja inteligente.</h2>
+      <p class="lead">La prueba recorre una oportunidad desde los datos de demo hasta una programación simulada, con marketing dentro de cada decisión.</p>
+
+      <div class="metrics">
+        <article class="metric-card" data-qa-card><b>ENTRADA</b><strong>1 audiencia</strong><p>Un caso de reactivación con señales obtenidas vía MCP o dataset equivalente.</p></article>
+        <article class="metric-card" data-qa-card><b>PROPUESTA</b><strong>3 recomendaciones</strong><p>Copy, momento, audiencia, explicación y exclusiones.</p></article>
+        <article class="metric-card" data-qa-card><b>CONTROL</b><strong>1 revisión humana</strong><p>Editar, regenerar, descartar o aprobar la recomendación.</p></article>
+        <article class="metric-card" data-qa-card><b>RESULTADO</b><strong>1 Push programada</strong><p>Calendario simulado y trazabilidad de la decisión.</p></article>
+      </div>
+      <p class="validation-note"><strong>Fuera del desarrollo de un día:</strong> clusterización productiva, Dashboard configurable, Funnel, envío real, aprendizaje automático y atribución. Esas capacidades permanecen en el roadmap.</p>
+    </section>
+
+    <section class="slide" data-chapter="Brainstorming">
+      <span class="eyebrow">08 · Conceptos y roadmap</span>
+      <h2>El brainstorming contiene cuatro conceptos; Q-Leap prototipa uno primero.</h2>
+      <p class="lead">El brainstorming conecta cuatro conceptos. La demo de un día profundiza uno y conserva los demás como dirección de producto.</p>
+
+      <div class="concept-map">
+        <article class="concept-card" data-qa-card>
+          <span class="status pilot">Propuesto · Roadmap</span>
+          <h3>Audiencias inteligentes</h3>
+          <p>Audiencias precomputadas a partir de clusterización y comportamiento de usuarios.</p>
+        </article>
+        <article class="concept-card focus" data-qa-card>
+          <span class="status proposed">Propuesto · Foco Q-Leap</span>
+          <h3>Push complejas inteligentes</h3>
+          <p>Recomendaciones explicables de audiencia, mensaje y momento con human in the loop.</p>
+        </article>
+        <article class="concept-card" data-qa-card>
+          <span class="status pilot">Propuesto · Roadmap</span>
+          <h3>Dashboard configurable</h3>
+          <p>Una vista armada para cada objetivo, con señales, decisiones y resultados relevantes.</p>
+        </article>
+        <article class="concept-card" data-qa-card>
+          <span class="status pilot">Propuesto · Roadmap</span>
+          <h3>Funnel adaptativo</h3>
+          <p>La respuesta de cada cliente orienta el siguiente contacto del journey.</p>
+        </article>
+      </div>
+
+      <div class="roadmap">
+        <div class="roadmap-step"><span>Q-LEAP · 1 DÍA</span><strong>Demostrar Push Copilot</strong><p>Tres recomendaciones, una revisión y una programación simulada.</p></div>
+        <div class="roadmap-step"><span>PILOTO</span><strong>Conectar audiencia y medición</strong><p>Clusterización, canal Push, Dashboard y grupo de control.</p></div>
+        <div class="roadmap-step"><span>PRODUCTO</span><strong>Construir el Funnel</strong><p>Aprendizaje con resultados y siguiente acción personalizada.</p></div>
+      </div>
+    </section>
+
+    <section class="slide closing" data-chapter="Decisión">
+      <span class="eyebrow">La decisión</span>
+      <h2>Aprobar una demo Q-Leap de <span style="color:var(--orange)">Push Copilot.</span></h2>
+      <p class="lead">Tres recomendaciones, una revisión humana y una Push programada. La integración de envío queda para la validación posterior.</p>
+      <div class="cta">Próximo paso → construir la demo funcional</div>
+    </section>
+
+    <section class="slide" data-view="technical" data-chapter="API publicada">
+      <span class="eyebrow">Profundización técnica · 01</span>
+      <h2>Qurable API ya publica los bloques centrales de datos y activación.</h2>
+      <p class="source-note">
+        <span>Fuente revisada: Qurable Loyalty Core Platform API v2</span>
+        <a href="https://docs.qurable.co/api-docs/v2" target="_blank" rel="noreferrer">Abrir documentación oficial ↗</a>
+      </p>
+
+      <div class="capability-grid">
+        <article class="api-card" data-qa-card>
+          <span class="status existing">Disponible en API</span>
+          <h3 style="margin-top:14px">Insights + MCP</h3>
+          <p>Consultas analíticas, stored queries y una interfaz MCP stateless para construir reportes.</p>
+          <div class="endpoint-list">
+            <code class="endpoint">POST /v2/insights/mcp</code>
+            <code class="endpoint">POST /v2/insights/query</code>
+            <code class="endpoint">POST /v2/insights/stored-queries/{key}/execute</code>
+          </div>
+        </article>
+        <article class="api-card" data-qa-card>
+          <span class="status existing">Disponible en API</span>
+          <h3 style="margin-top:14px">Segmentos + Audiencias</h3>
+          <p>DSL, estimación de alcance, audiencia enlazada y refresco once, daily, weekly o monthly.</p>
+          <div class="endpoint-list">
+            <code class="endpoint">POST /v2/segments</code>
+            <code class="endpoint">POST /v2/segment-definitions/estimate</code>
+            <code class="endpoint">GET /v2/audiences/{key}/members</code>
+          </div>
+        </article>
+        <article class="api-card" data-qa-card>
+          <span class="status existing">Disponible en API</span>
+          <h3 style="margin-top:14px">Cliente + Rewards</h3>
+          <p>Perfil, preferencias de notificación, eventos, transacciones, Puntos, Cupones y Campañas.</p>
+          <div class="endpoint-list">
+            <code class="endpoint">GET /v2/members/{id}</code>
+            <code class="endpoint">GET /v2/members/{id}/events</code>
+            <code class="endpoint">GET /v2/coupon-books · /v2/campaigns</code>
+          </div>
+        </article>
+        <article class="api-card" data-qa-card>
+          <span class="status existing">Disponible en API</span>
+          <h3 style="margin-top:14px">Activaciones</h3>
+          <p>Jobs por audiencia o lista explícita, target webhook y tracking por miembro.</p>
+          <div class="endpoint-list">
+            <code class="endpoint">POST /v2/activation/targets</code>
+            <code class="endpoint">POST /v2/activation/jobs</code>
+            <code class="endpoint">GET /v2/activation/jobs/{id}/executions</code>
+          </div>
+        </article>
+        <article class="api-card" data-qa-card>
+          <span class="status existing">Disponible en API</span>
+          <h3 style="margin-top:14px">Dashboards + Widgets</h3>
+          <p>Crear, ordenar, validar y ejecutar widgets sobre queries DSL o almacenadas.</p>
+          <div class="endpoint-list">
+            <code class="endpoint">POST /v2/console/insights/dashboards</code>
+            <code class="endpoint">POST /v2/console/insights/widgets</code>
+            <code class="endpoint">POST /v2/console/insights/widgets/validate</code>
+          </div>
+        </article>
+        <article class="api-card" data-qa-card>
+          <span class="status existing">Disponible en API</span>
+          <h3 style="margin-top:14px">Eventos</h3>
+          <p>Eventos síncronos y asíncronos, tipos custom y datos para construir medición.</p>
+          <div class="endpoint-list">
+            <code class="endpoint">POST /v2/events/track</code>
+            <code class="endpoint">POST /v2/events/track-async</code>
+            <code class="endpoint">POST /v2/custom-event-types</code>
+          </div>
+        </article>
+      </div>
+      <p class="certainty"><strong>Certeza:</strong> son contratos publicados en API v2. El MCP documentado cubre reporting; las operaciones transaccionales requieren clientes API con scopes. Acceso, modelo semántico, stored queries y permisos deben validarse en el tenant del piloto.</p>
+    </section>
+
+    <section class="slide" data-view="technical" data-chapter="Mapa de capacidades">
+      <span class="eyebrow">Profundización técnica · 02</span>
+      <h2>Cada idea combina una base publicada con trabajo nuevo.</h2>
+      <p class="lead">El mapa evita presentar composición agentic, canal Push y modelos de aprendizaje como capacidades terminadas.</p>
+
+      <div class="mapping-grid" style="margin-top:24px">
+        <article class="mapping-card" data-qa-card>
+          <div>
+            <span class="status existing">Base API fuerte</span>
+            <h3 style="margin-top:14px">Audiencias inteligentes</h3>
+            <p>Segments, Audiences, Semantic Model, Estimate y refresco programado.</p>
+          </div>
+          <div class="mapping-side">
+            <small>Trabajo nuevo · Piloto</small>
+            <strong>Clusterización y selección agentic</strong>
+            <p>Modelo de clusters, scoring, explicación, drift y aprobación antes de crear el Segmento.</p>
+          </div>
+        </article>
+        <article class="mapping-card" data-qa-card>
+          <div>
+            <span class="status existing">Base API fuerte</span>
+            <h3 style="margin-top:14px">Dashboard a medida</h3>
+            <p>Dashboards, Widgets, Insights Query, preview y validación.</p>
+          </div>
+          <div class="mapping-side">
+            <small>Trabajo nuevo · Cercano</small>
+            <strong>Intención → query → visual</strong>
+            <p>El agente interpreta la pregunta, elige métricas y propone un dashboard coherente.</p>
+          </div>
+        </article>
+        <article class="mapping-card focus" data-qa-card>
+          <div>
+            <span class="status proposed">Foco Q-Leap</span>
+            <h3 style="margin-top:14px">Push complejas inteligentes</h3>
+            <p>Datos, preferencias <code>notifications.push</code>, audiencias, rewards y activation webhook.</p>
+          </div>
+          <div class="mapping-side">
+            <small>Trabajo nuevo · Inmediato</small>
+            <strong>Recomendador + operación + canal</strong>
+            <p>Evidencia, ranking, copy, lifecycle de aprobación, políticas y adaptador al proveedor Push.</p>
+          </div>
+        </article>
+        <article class="mapping-card" data-qa-card>
+          <div>
+            <span class="status pilot">Base componible</span>
+            <h3 style="margin-top:14px">Funnel</h3>
+            <p>Custom Events, Insights, Widgets y contexto de cada miembro.</p>
+          </div>
+          <div class="mapping-side">
+            <small>Trabajo nuevo · Roadmap</small>
+            <strong>Etapas + atribución + control</strong>
+            <p>Callbacks delivered/open/click, recommendationId, ventanas de conversión y holdouts.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="slide" data-view="technical" data-chapter="Arquitectura">
+      <span class="eyebrow">Profundización técnica · 03</span>
+      <h2>El demo usa el read path real y simula las mutaciones sensibles.</h2>
+      <p class="lead">La arquitectura separa lo que podemos leer hoy, lo que compone Q-Leap y lo que requiere un piloto controlado.</p>
+
+      <div class="technical-flow">
+        <article class="technical-step existing" data-qa-card>
+          <span>API existente</span>
+          <strong>Insights MCP</strong>
+          <p>Modelo semántico, queries y señales agregadas.</p>
+        </article>
+        <article class="technical-step existing" data-qa-card>
+          <span>API existente</span>
+          <strong>Segment / Audience</strong>
+          <p>Audiencia existente o estimación de una definición.</p>
+        </article>
+        <article class="technical-step new" data-qa-card>
+          <span>Nuevo Q-Leap</span>
+          <strong>Opportunity Agent</strong>
+          <p>Detecta casos y genera tres recomendaciones explicables.</p>
+        </article>
+        <article class="technical-step new" data-qa-card>
+          <span>Nuevo Q-Leap</span>
+          <strong>Policy + Draft</strong>
+          <p>Copy, timing, exclusiones, evidencia y audit trail.</p>
+        </article>
+        <article class="technical-step new" data-qa-card>
+          <span>Nuevo Q-Leap</span>
+          <strong>Human approval</strong>
+          <p>Editar, descartar, aprobar y programar en la UI.</p>
+        </article>
+        <article class="technical-step pilot" data-qa-card>
+          <span>Piloto</span>
+          <strong>Activation webhook</strong>
+          <p>Job con snapshot de audiencia y campos allowlisted.</p>
+        </article>
+        <article class="technical-step pilot" data-qa-card>
+          <span>Piloto</span>
+          <strong>Push provider</strong>
+          <p>FCM, APNs u otro proveedor; callbacks hacia Events.</p>
+        </article>
+      </div>
+
+      <div class="scope-grid" style="margin-top:22px">
+        <article class="api-card" data-qa-card>
+          <span class="status existing">Demo · Lectura</span>
+          <h3 style="margin-top:12px">Puede usar contratos reales</h3>
+          <p>Insights MCP, semantic model, estimate, audiencia y rewards en modo read-only.</p>
+        </article>
+        <article class="api-card" data-qa-card>
+          <span class="status proposed">Demo · Nuevo</span>
+          <h3 style="margin-top:12px">Se construye en la UI</h3>
+          <p>Recommendation object, explicación, edición, aprobación y calendario simulado.</p>
+        </article>
+        <article class="api-card" data-qa-card>
+          <span class="status pilot">Piloto · Validación</span>
+          <h3 style="margin-top:12px">Se prueba con audiencia seed</h3>
+          <p>Webhook, proveedor Push, consentimiento, tracking y bloqueo ante fallas.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="slide" data-view="technical" data-chapter="Plan técnico">
+      <span class="eyebrow">Profundización técnica · 04</span>
+      <h2>El trabajo inmediato convierte APIs disponibles en una operación segura.</h2>
+      <p class="lead">La evolución empieza con un contrato de recomendación y termina con atribución, aprendizaje y mayor autonomía.</p>
+
+      <div class="build-grid" style="margin-top:24px">
+        <article class="build-column now" data-qa-card>
+          <span class="status existing">Ya publicado</span>
+          <h3 style="margin-top:14px">Base Qurable API</h3>
+          <ul>
+            <li>Insights Query + MCP</li>
+            <li>Segments + Audiences + Estimate</li>
+            <li>Members, Events, Puntos, Cupones y Campañas</li>
+            <li>Activation Jobs + webhook</li>
+            <li>Dashboards + Widgets</li>
+          </ul>
+        </article>
+        <article class="build-column next" data-qa-card>
+          <span class="status proposed">Inmediato</span>
+          <h3 style="margin-top:14px">Demo → Piloto</h3>
+          <ul>
+            <li>Contrato persistente de Push Recommendation</li>
+            <li>Queries curadas y ranking de oportunidades</li>
+            <li>Workflow de edición, aprobación y auditoría</li>
+            <li>Consentimiento, suppression, quiet hours y frequency caps</li>
+            <li>Adaptador Push, device tokens y audiencia seed</li>
+          </ul>
+        </article>
+        <article class="build-column roadmap-column" data-qa-card>
+          <span class="status pilot">Largo plazo</span>
+          <h3 style="margin-top:14px">Sistema que aprende</h3>
+          <ul>
+            <li>Taxonomía delivered, opened, clicked y converted</li>
+            <li>Funnel, atribución y grupos de control</li>
+            <li>Clusterización y propensity scoring</li>
+            <li>Optimización de horario y contenido</li>
+            <li>Dashboard autoarmado y autonomía gradual</li>
+          </ul>
+        </article>
+      </div>
+      <p class="certainty"><strong>Guardrail de arquitectura:</strong> lectura por defecto; aprobación explícita antes de crear segmentos, dashboards o activaciones; campos proyectados mediante allowlist y ejecución piloto sólo sobre una audiencia seed.</p>
+    </section>
+  </main>
+
+  <script>
+    let activeView = 'vision';
+    let slides = [];
+    const progress = document.getElementById('progress');
+    const slideCount = document.getElementById('slideCount');
+    const chapter = document.getElementById('chapter');
+    const viewButtons = [...document.querySelectorAll('[data-view-button]')];
+    const approveButton = document.getElementById('approveButton');
+    const resetButton = document.getElementById('resetButton');
+    const demoResult = document.getElementById('demoResult');
+    const demoStatus = document.getElementById('demoStatus');
+    const demoMessage = document.getElementById('demoMessage');
+
+    function getSlides() {
+      return activeView === 'technical'
+        ? [...document.querySelectorAll('.slide[data-view="technical"]')]
+        : [...document.querySelectorAll('.slide:not([data-view="technical"])')];
+    }
+
+    function updatePosition() {
+      slides = getSlides();
+      const max = document.documentElement.scrollHeight - innerHeight;
+      progress.style.width = `${max > 0 ? (scrollY / max) * 100 : 0}%`;
+      const middle = scrollY + innerHeight / 2;
+      let active = 0;
+      slides.forEach((slide, index) => {
+        if (slide.offsetTop <= middle) active = index;
+      });
+      slideCount.textContent = `${String(active + 1).padStart(2, '0')} / ${String(slides.length).padStart(2, '0')}`;
+      chapter.textContent = slides[active].dataset.chapter || 'Propuesta';
+    }
+
+    function switchView(view) {
+      activeView = view;
+      document.body.dataset.activeView = view;
+      viewButtons.forEach(button => {
+        button.setAttribute('aria-selected', String(button.dataset.viewButton === view));
+      });
+      scrollTo({ top: 0, behavior: 'auto' });
+      requestAnimationFrame(updatePosition);
+    }
+
+    function go(direction) {
+      const middle = scrollY + innerHeight / 2;
+      let active = slides.findIndex(slide => slide.offsetTop + slide.offsetHeight > middle);
+      if (active < 0) active = slides.length - 1;
+      const target = Math.max(0, Math.min(slides.length - 1, active + direction));
+      slides[target].scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function scheduleDemo() {
+      demoResult.classList.add('is-scheduled');
+      demoStatus.textContent = 'Programada';
+      approveButton.textContent = 'Programada ✓';
+      approveButton.disabled = true;
+      demoMessage.textContent = 'La recomendación quedó incorporada al calendario de la demo para mañana a las 18:30.';
+    }
+
+    function resetDemo() {
+      demoResult.classList.remove('is-scheduled');
+      demoStatus.textContent = 'Recomendada';
+      approveButton.textContent = 'Aprobar y programar';
+      approveButton.disabled = false;
+      demoMessage.textContent = 'La acción actualiza el calendario de la demo. El envío real queda fuera de esta primera validación.';
+    }
+
+    approveButton.addEventListener('click', scheduleDemo);
+    resetButton.addEventListener('click', resetDemo);
+    viewButtons.forEach(button => {
+      button.addEventListener('click', () => switchView(button.dataset.viewButton));
+    });
+    addEventListener('scroll', updatePosition, { passive: true });
+    addEventListener('resize', updatePosition);
+    addEventListener('keydown', event => {
+      if (['ArrowDown', 'ArrowRight', 'PageDown', ' '].includes(event.key)) {
+        event.preventDefault();
+        go(1);
+      }
+      if (['ArrowUp', 'ArrowLeft', 'PageUp'].includes(event.key)) {
+        event.preventDefault();
+        go(-1);
+      }
+      if (event.key === 'Home') slides[0].scrollIntoView({ behavior: 'smooth' });
+      if (event.key === 'End') slides.at(-1).scrollIntoView({ behavior: 'smooth' });
+    });
+    const requestedView = new URLSearchParams(location.search).get('view');
+    if (requestedView === 'technical') switchView('technical');
+    else updatePosition();
+  </script>
+</body>
+</html>
