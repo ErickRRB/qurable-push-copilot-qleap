@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Qurable Push Copilot: nueva funcionalidad propuesta para Qurable Manager v2, prototipada durante el hackathon Q-Leap.">
-  <title>Qurable Manager v2 · Push Copilot · Hackathon Q-Leap</title>
+  <meta name="description" content="Qurable Push Copilot: una nueva funcionalidad de Qurable Manager v2, prototipada en Q-Leap.">
+  <title>Qurable Manager v2 · Push Copilot · Q-Leap</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect x=%228%22 y=%228%22 width=%2248%22 height=%2248%22 rx=%2215%22 fill=%22%23ee6c26%22/><path d=%22M21 34h22M32 23v22%22 stroke=%22%23181716%22 stroke-width=%226%22 stroke-linecap=%22round%22/></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -279,6 +279,7 @@
     .status.existing { background: var(--sage-soft); }
     .status.proposed { background: var(--orange-soft); }
     .status.pilot { background: var(--blue-soft); }
+    .status.backlog { background: var(--yellow-soft); }
     .meta-chip { padding: 5px 8px; background: var(--surface-soft); color: var(--text-dim); }
 
     .status::before {
@@ -308,6 +309,11 @@
     .status.pilot::before {
       mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2.5 8h10M9 4.5 12.5 8 9 11.5' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
       -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2.5 8h10M9 4.5 12.5 8 9 11.5' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    }
+
+    .status.backlog::before {
+      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 3.5h10v2H3v-2Zm0 3.5h10v2H3V7Zm0 3.5h7v2H3v-2Z' fill='black'/%3E%3C/svg%3E");
+      -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 3.5h10v2H3v-2Zm0 3.5h10v2H3V7Zm0 3.5h7v2H3v-2Z' fill='black'/%3E%3C/svg%3E");
     }
 
     .workflow-status {
@@ -346,7 +352,7 @@
     h1 {
       max-width: 830px;
       margin: 26px 0 20px;
-      font-size: clamp(52px, 6.7vw, 96px);
+      font-size: clamp(52px, 5.8vw, 84px);
       font-weight: 800;
       line-height: .92;
       letter-spacing: -.055em;
@@ -391,10 +397,15 @@
       align-items: center;
     }
 
-    .hero-grid { grid-template-columns: minmax(390px, .78fr) minmax(560px, 1.22fr); }
+    .hero-grid { grid-template-columns: minmax(440px, .92fr) minmax(540px, 1.08fr); }
     .split { grid-template-columns: minmax(380px, .85fr) minmax(520px, 1.15fr); }
-    .architecture-grid { grid-template-columns: minmax(260px, .8fr) minmax(300px, 1fr) minmax(260px, .8fr); }
+    .architecture-grid {
+      grid-template-columns:
+        minmax(250px, .8fr) 34px minmax(300px, 1fr) 34px minmax(250px, .8fr);
+      gap: clamp(12px, 1.7vw, 24px);
+    }
     .scope-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; }
+    .scope-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
     .hero-copy,
     .hero-grid > *,
@@ -1268,7 +1279,7 @@
 
     .build-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 16px;
       align-items: stretch;
     }
@@ -1284,6 +1295,7 @@
     .build-column.now { background: var(--sage-soft); }
     .build-column.next { background: var(--orange-soft); }
     .build-column.roadmap-column { background: var(--blue-soft); }
+    .build-column.backlog-column { background: var(--yellow-soft); }
 
     .build-column ul {
       display: grid;
@@ -1317,6 +1329,7 @@
       .capability-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .technical-flow { grid-template-columns: repeat(4, minmax(0, 1fr)); }
       .technical-step:nth-child(4)::after { display: none; }
+      .build-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
 
     @media (max-width: 820px) {
@@ -1325,6 +1338,7 @@
       .guardrails,
       .scope-grid,
       .concept-map { grid-template-columns: 1fr; }
+      .scope-grid.two { grid-template-columns: 1fr; }
       .concept-card.focus { transform: none; }
       .opportunity-card > p { min-height: 0; }
       .planner-grid { grid-template-columns: 1fr; }
@@ -1447,26 +1461,21 @@
     <section class="slide" data-chapter="Propuesta">
       <div class="hero-grid">
         <div class="hero-copy">
-          <span class="eyebrow">Q-Leap · Hackathon · Prototipo de 1 día</span>
-          <h1>Cuatro ideas para activar mejor los <em>datos de clientes.</em></h1>
-          <p class="lead">Durante Q-Leap, el equipo prototipa <strong>Qurable Push Copilot</strong> como una nueva funcionalidad de <strong>Qurable Manager v2</strong>.</p>
-          <div class="hero-flow" aria-label="Conceptos del brainstorming">
-            <span class="flow-pill">Audiencias inteligentes</span>
-            <span class="flow-pill">Dashboard a medida</span>
-            <span class="flow-pill" style="background:var(--orange-soft)">Push complejas</span>
-            <span class="flow-pill">Funnel</span>
-          </div>
-          <div class="state-legend" aria-label="Estados de capacidades">
+          <span class="eyebrow">Q-Leap · Prototipo de 1 día</span>
+          <h1>Qurable Push Copilot convierte datos en <em>acciones revisables.</em></h1>
+          <p class="lead">En Q-Leap construimos una nueva funcionalidad de <strong>Qurable Manager v2</strong>: detecta una oportunidad, prepara la Push y la deja lista para aprobación.</p>
+          <div class="state-legend" aria-label="Niveles de implementación">
             <div class="legend-item"><span class="status existing">EXISTS</span><small>Manager v2 + API</small></div>
-            <div class="legend-item"><span class="status proposed">NEW</span><small>Prototipo en Q-Leap</small></div>
-            <div class="legend-item"><span class="status pilot">NEXT</span><small>Roadmap</small></div>
+            <div class="legend-item"><span class="status proposed">NEW</span><small>1 día en Q-Leap</small></div>
+            <div class="legend-item"><span class="status pilot">NEXT · PILOTO</span><small>Validación real</small></div>
+            <div class="legend-item"><span class="status backlog">BACKLOG</span><small>Evolución</small></div>
           </div>
         </div>
 
         <div class="panel planner-shell" data-qa-card>
           <div class="panel-header">
             <div class="panel-title"><span class="panel-title-icon">↗</span> Plan recomendado</div>
-            <span class="status proposed">NEW · Push Copilot</span>
+            <span class="status proposed">NEW · 1 día</span>
           </div>
           <div class="planner-grid">
             <div class="day-column">
@@ -1624,7 +1633,7 @@
             <button class="action primary" id="approveButton">Aprobar y programar</button>
             <button class="action" id="resetButton">Reiniciar</button>
           </div>
-          <p class="demo-caption"><span class="status pilot">NEXT</span><span id="demoMessage">El envío real queda en el roadmap; esta acción actualiza el calendario de la demo.</span></p>
+          <p class="demo-caption"><span class="status pilot">NEXT · PILOTO</span><span id="demoMessage">Esta acción actualiza el calendario de la demo. El piloto incorpora el envío real.</span></p>
         </article>
 
         <article class="panel calendar-panel" data-qa-card>
@@ -1644,9 +1653,9 @@
     </section>
 
     <section class="slide" data-chapter="Cómo funciona">
-      <span class="eyebrow">05 · Capacidad propuesta</span>
-      <h2>La recomendación combina datos existentes con una orquestación nueva.</h2>
-      <p class="lead">Las etiquetas separan la base de Qurable Manager v2, la funcionalidad que prototipamos durante Q-Leap y el trabajo posterior.</p>
+      <span class="eyebrow">05 · Cómo funciona</span>
+      <h2>Push Copilot conecta datos y decisión.</h2>
+      <p class="lead">Usamos datos de clientes, Predicciones, Segmentos y Campañas para preparar una recomendación con evidencia, controles y revisión humana.</p>
 
       <div class="architecture-grid">
         <div class="architecture-column">
@@ -1656,22 +1665,22 @@
           <div class="architecture-node existing"><strong>Segmentos y Campañas</strong><span>Audiencias, Recompensas y actividad previa.</span></div>
         </div>
 
-        <div>
-          <div class="connector" aria-hidden="true">→</div>
-          <article class="agent-core" data-qa-card>
-            <div class="agent-orbit">AI</div>
-            <span class="status proposed">NEW · Hackathon</span>
-            <h3>Qurable Push Copilot</h3>
-            <p>Consulta vía MCP, detecta oportunidades, compone recomendaciones y aplica políticas antes de presentarlas.</p>
-          </article>
-          <div class="connector" aria-hidden="true">→</div>
-        </div>
+        <div class="connector" aria-hidden="true">→</div>
+
+        <article class="agent-core" data-qa-card>
+          <div class="agent-orbit">AI</div>
+          <span class="status proposed">NEW · Q-Leap</span>
+          <h3>Qurable Push Copilot</h3>
+          <p>Consulta vía MCP, detecta oportunidades, compone recomendaciones y aplica políticas antes de presentarlas.</p>
+        </article>
+
+        <div class="connector" aria-hidden="true">→</div>
 
         <div class="architecture-column">
           <div class="architecture-title"><span class="status proposed">NEW · Push Copilot</span></div>
           <div class="architecture-node proposed"><strong>Bandeja priorizada</strong><span>Mañana, semana y oportunidades urgentes.</span></div>
           <div class="architecture-node proposed"><strong>Revisión humana</strong><span>Editar, aprobar, programar o descartar.</span></div>
-          <div class="architecture-node pilot"><strong>NEXT · Medición</strong><span>Respuesta, saturación y efecto incremental.</span></div>
+          <div class="architecture-node pilot"><strong>NEXT · Piloto</strong><span>Envío real, respuesta y medición básica.</span></div>
         </div>
       </div>
     </section>
@@ -1691,16 +1700,16 @@
       </div>
 
       <div class="autonomy-strip">
-        <div class="autonomy-step active"><span class="status proposed">NEW · Hackathon Q-Leap</span><strong>Prototipo: recomendar y preparar</strong></div>
+        <div class="autonomy-step active"><span class="status proposed">NEW · Q-Leap</span><strong>Prototipo: recomendar y preparar</strong></div>
         <div class="autonomy-step"><span class="status pilot">NEXT · Piloto</span><strong>Programar con aprobación</strong></div>
-        <div class="autonomy-step"><span class="status pilot">NEXT · Manager v2</span><strong>Automatizar casos de bajo riesgo</strong></div>
+        <div class="autonomy-step"><span class="status backlog">BACKLOG</span><strong>Automatizar casos de bajo riesgo</strong></div>
       </div>
     </section>
 
     <section class="slide" data-chapter="Validación">
       <span class="eyebrow">07 · MVP de 1 día</span>
-      <h2>En un día demostramos el flujo de una Push compleja inteligente.</h2>
-      <p class="lead">La prueba recorre una oportunidad desde los datos de demo hasta una programación simulada, con marketing dentro de cada decisión.</p>
+      <h2>En un día dejamos una Push lista para decidir.</h2>
+      <p class="lead">Tomamos una audiencia, generamos tres recomendaciones y dejamos una programación simulada bajo control de marketing.</p>
 
       <div class="metrics">
         <article class="metric-card existing" data-qa-card><span class="status existing">EXISTS · Entrada</span><strong style="margin-top:14px">1 audiencia</strong><p>Un caso de reactivación con señales obtenidas vía MCP o dataset equivalente.</p></article>
@@ -1708,49 +1717,52 @@
         <article class="metric-card proposed" data-qa-card><span class="status proposed">NEW · Prototipo</span><strong style="margin-top:14px">1 revisión humana</strong><p>Editar, regenerar, descartar o aprobar la recomendación.</p></article>
         <article class="metric-card proposed" data-qa-card><span class="status proposed">NEW · Simulado</span><strong style="margin-top:14px">1 Push programada</strong><p>Calendario simulado y trazabilidad de la decisión.</p></article>
       </div>
-      <p class="validation-note"><span class="status pilot">NEXT · Roadmap</span> Clusterización productiva, Dashboard agentic, Funnel, envío real, aprendizaje automático y atribución.</p>
+      <div class="scope-grid two" style="margin-top:15px">
+        <p class="validation-note" style="margin:0"><span class="status pilot">NEXT · Piloto</span> Envío real, proveedor Push, consentimiento, límites de contacto y medición básica.</p>
+        <p class="validation-note" style="margin:0"><span class="status backlog">BACKLOG</span> Audiencias inteligentes, Dashboard agentic, Funnel, atribución y aprendizaje.</p>
+      </div>
     </section>
 
-    <section class="slide" data-chapter="Brainstorming">
-      <span class="eyebrow">08 · Conceptos y roadmap</span>
-      <h2>Durante Q-Leap prototipamos Push Copilot; los otros conceptos quedan en el roadmap.</h2>
-      <p class="lead">Qurable Push Copilot se propone como funcionalidad de Qurable Manager v2. Las otras ideas siguen como dirección de producto.</p>
+    <section class="slide" data-chapter="Implementación">
+      <span class="eyebrow">08 · Implementación por etapas</span>
+      <h2>Una sola idea, cuatro niveles de implementación.</h2>
+      <p class="lead">El prototipo valida la decisión principal. El piloto prueba valor en una operación real y el backlog amplía el producto.</p>
 
       <div class="concept-map">
         <article class="concept-card" data-qa-card>
-          <span class="status pilot">NEXT · Roadmap</span>
-          <h3>Audiencias inteligentes</h3>
-          <p>Audiencias precomputadas a partir de clusterización y comportamiento de usuarios.</p>
+          <span class="status existing">EXISTS</span>
+          <h3>Base de Qurable</h3>
+          <p>Datos de clientes, Segmentos, Predicciones, Campañas, Puntos, Cupones e Insights.</p>
         </article>
         <article class="concept-card focus" data-qa-card>
-          <span class="status proposed">NEW · Push Copilot</span>
-          <h3>Push complejas inteligentes</h3>
-          <p>Recomendaciones explicables de audiencia, mensaje y momento con human in the loop.</p>
+          <span class="status proposed">NEW · Q-Leap</span>
+          <h3>Prototipo de Push Copilot</h3>
+          <p>Tres recomendaciones, explicación, revisión humana y programación simulada.</p>
         </article>
         <article class="concept-card" data-qa-card>
-          <span class="status pilot">NEXT · Roadmap</span>
-          <h3>Dashboard configurable</h3>
-          <p>Una vista armada para cada objetivo, con señales, decisiones y resultados relevantes.</p>
+          <span class="status pilot">NEXT · Piloto</span>
+          <h3>Validación real</h3>
+          <p>Proveedor Push, audiencia controlada, consentimientos, límites y medición básica.</p>
         </article>
         <article class="concept-card" data-qa-card>
-          <span class="status pilot">NEXT · Roadmap</span>
-          <h3>Funnel adaptativo</h3>
-          <p>La respuesta de cada cliente orienta el siguiente contacto del journey.</p>
+          <span class="status backlog">BACKLOG</span>
+          <h3>Evolución del producto</h3>
+          <p>Audiencias inteligentes, Dashboard agentic, Funnel, atribución, optimización y aprendizaje.</p>
         </article>
       </div>
 
       <div class="roadmap">
-        <div class="roadmap-step"><span class="status proposed">NEW · Hackathon Q-Leap</span><strong>Prototipo de Push Copilot</strong><p>Tres recomendaciones, una revisión y una programación simulada.</p></div>
-        <div class="roadmap-step"><span class="status pilot">NEXT · Piloto</span><strong>Conectar audiencia y medición</strong><p>Canal Push, políticas productivas, Dashboard y grupo de control.</p></div>
-        <div class="roadmap-step"><span class="status pilot">NEXT · Manager v2</span><strong>Ampliar el sistema</strong><p>Clusterización, Funnel, aprendizaje y siguiente acción personalizada.</p></div>
+        <div class="roadmap-step"><span>Q-LEAP</span><strong>Construimos</strong><p>Una experiencia funcional para recorrer la idea.</p></div>
+        <div class="roadmap-step"><span>REVIEW</span><strong>Recibimos evaluación</strong><p>Marketing, producto y jurado revisan utilidad, claridad y viabilidad.</p></div>
+        <div class="roadmap-step"><span>DECISIÓN</span><strong>Definimos el piloto</strong><p>La evaluación orienta el siguiente alcance y sus prioridades.</p></div>
       </div>
     </section>
 
     <section class="slide closing" data-chapter="Decisión">
-      <span class="eyebrow">La decisión</span>
-      <h2>Aprobar el prototipo de <span style="color:var(--orange)">Qurable Push Copilot.</span></h2>
-      <p class="lead">Una nueva funcionalidad propuesta para Qurable Manager v2, preparada para presentarse durante el hackathon Q-Leap.</p>
-      <div class="cta">Próximo paso → construir el prototipo para Q-Leap</div>
+      <span class="eyebrow">Prototipo · Review · Decisión</span>
+      <h2>Prototipamos, evaluamos y definimos <span style="color:var(--orange)">el piloto.</span></h2>
+      <p class="lead">En Q-Leap presentamos Qurable Push Copilot, recogemos la valoración de marketing, producto y jurado, y usamos esa evidencia para definir el piloto.</p>
+      <div class="cta">Construir prototipo → recibir evaluación → decidir piloto</div>
     </section>
 
     <section class="slide" data-view="technical" data-chapter="API publicada">
@@ -1762,8 +1774,9 @@
       </p>
       <div class="state-legend" aria-label="Estados de capacidades" style="margin:0 0 18px">
         <div class="legend-item"><span class="status existing">EXISTS</span><small>Manager v2 + API</small></div>
-        <div class="legend-item"><span class="status proposed">NEW</span><small>Prototipo en Q-Leap</small></div>
-        <div class="legend-item"><span class="status pilot">NEXT</span><small>Piloto y roadmap</small></div>
+        <div class="legend-item"><span class="status proposed">NEW</span><small>1 día en Q-Leap</small></div>
+        <div class="legend-item"><span class="status pilot">NEXT · PILOTO</span><small>Validación real</small></div>
+        <div class="legend-item"><span class="status backlog">BACKLOG</span><small>Evolución</small></div>
       </div>
 
       <div class="capability-grid">
@@ -1833,57 +1846,52 @@
 
     <section class="slide" data-view="technical" data-chapter="Mapa de capacidades">
       <span class="eyebrow">Profundización técnica · 02</span>
-      <h2>Cada idea combina una base publicada con trabajo nuevo.</h2>
-      <p class="lead">El mapa evita presentar composición agentic, canal Push y modelos de aprendizaje como capacidades terminadas.</p>
+      <h2>Push Copilot crece sobre capacidades que Qurable ya expone.</h2>
+      <p class="lead">El prototipo usa contratos reales para preparar la decisión. El envío productivo y las capacidades de aprendizaje avanzan en etapas posteriores.</p>
 
       <div class="mapping-grid" style="margin-top:24px">
         <article class="mapping-card" data-qa-card>
           <div>
-            <span class="status existing">EXISTS · Base API</span>
-            <h3 style="margin-top:14px">Audiencias inteligentes</h3>
-            <p>Segments, Audiences, Semantic Model, Estimate y refresco programado.</p>
+            <span class="status existing">EXISTS</span>
+            <h3 style="margin-top:14px">Base de Qurable</h3>
+            <p>Insights MCP, Segments, Audiences, Rewards, Events, Dashboards y activation webhook.</p>
           </div>
           <div class="mapping-side">
-            <span class="status pilot">NEXT · Roadmap</span>
-            <strong>Clusterización y selección agentic</strong>
-            <p>Modelo de clusters, scoring, explicación, drift y aprobación antes de crear el Segmento.</p>
-          </div>
-        </article>
-        <article class="mapping-card" data-qa-card>
-          <div>
-            <span class="status existing">EXISTS · Manager v2</span>
-            <h3 style="margin-top:14px">Dashboard a medida</h3>
-            <p>Dashboards, Widgets, Insights Query, preview y validación.</p>
-          </div>
-          <div class="mapping-side">
-            <span class="status pilot">NEXT · Roadmap</span>
-            <strong>Intención → query → visual</strong>
-            <p>El agente interpreta la pregunta, elige métricas y propone un dashboard coherente.</p>
+            <strong>Contratos disponibles</strong>
+            <p>La API aporta datos, consultas, audiencias materializadas y puntos de integración.</p>
           </div>
         </article>
         <article class="mapping-card focus" data-qa-card>
           <div>
-            <span class="status proposed">NEW · Push Copilot</span>
-            <h3 style="margin-top:14px">Push complejas inteligentes</h3>
-            <p>Datos, preferencias <code>notifications.push</code>, audiencias, rewards y activation webhook.</p>
+            <span class="status proposed">NEW · Q-Leap</span>
+            <h3 style="margin-top:14px">Prototipo de Push Copilot</h3>
+            <p>Opportunity Agent, evidencia, ranking, copy, políticas demo y revisión humana.</p>
           </div>
           <div class="mapping-side">
-            <span class="status proposed">NEW · Hackathon</span>
-            <strong>Recomendador + operación humana</strong>
-            <p>Evidencia, ranking, copy, lifecycle de aprobación, políticas demo y calendario simulado.</p>
-            <div class="legend-item" style="margin-top:10px"><span class="status pilot">NEXT</span><small>Proveedor Push y envío real.</small></div>
+            <strong>Resultado de un día</strong>
+            <p>Tres recomendaciones y una programación simulada dentro de Qurable Manager v2.</p>
           </div>
         </article>
         <article class="mapping-card" data-qa-card>
           <div>
-            <span class="status existing">EXISTS · Base componible</span>
-            <h3 style="margin-top:14px">Funnel</h3>
-            <p>Custom Events, Insights, Widgets y contexto de cada miembro.</p>
+            <span class="status pilot">NEXT · Piloto</span>
+            <h3 style="margin-top:14px">Validación real</h3>
+            <p>Push provider, device tokens, audiencia seed, consentimiento y límites de contacto.</p>
           </div>
           <div class="mapping-side">
-            <span class="status pilot">NEXT · Roadmap</span>
-            <strong>Etapas + atribución + control</strong>
-            <p>Callbacks delivered/open/click, recommendationId, ventanas de conversión y holdouts.</p>
+            <strong>Evidencia del piloto</strong>
+            <p>Entrega, fallas, aperturas, clicks y conversión básica sobre un grupo controlado.</p>
+          </div>
+        </article>
+        <article class="mapping-card" data-qa-card>
+          <div>
+            <span class="status backlog">BACKLOG</span>
+            <h3 style="margin-top:14px">Evolución de producto</h3>
+            <p>Audiencias inteligentes, Dashboard agentic, Funnel y atribución avanzada.</p>
+          </div>
+          <div class="mapping-side">
+            <strong>Optimización y aprendizaje</strong>
+            <p>Clusterización, propensity scoring, send-time optimization y autonomía gradual.</p>
           </div>
         </article>
       </div>
@@ -1891,8 +1899,8 @@
 
     <section class="slide" data-view="technical" data-chapter="Arquitectura">
       <span class="eyebrow">Profundización técnica · 03</span>
-      <h2>El prototipo para Q-Leap usa el read path real y simula las mutaciones sensibles.</h2>
-      <p class="lead">La arquitectura separa la base de Qurable, lo que construye Qurable Push Copilot y lo que requiere un piloto controlado.</p>
+      <h2>En Q-Leap usamos el read path real y simulamos las mutaciones sensibles.</h2>
+      <p class="lead">Consultamos la base disponible, generamos recomendaciones y conservamos las activaciones productivas para un piloto controlado.</p>
 
       <div class="technical-flow">
         <article class="technical-step existing" data-qa-card>
@@ -1935,12 +1943,12 @@
       <div class="scope-grid" style="margin-top:22px">
         <article class="api-card" data-qa-card>
           <span class="status existing">EXISTS · Read path</span>
-          <h3 style="margin-top:12px">Puede usar contratos reales</h3>
+          <h3 style="margin-top:12px">Usamos contratos reales</h3>
           <p>Insights MCP, semantic model, estimate, audiencia y rewards en modo read-only.</p>
         </article>
         <article class="api-card" data-qa-card>
-          <span class="status proposed">NEW · Hackathon</span>
-          <h3 style="margin-top:12px">Se construye en la UI</h3>
+          <span class="status proposed">NEW · Q-Leap</span>
+          <h3 style="margin-top:12px">Construimos la experiencia</h3>
           <p>Recommendation object, explicación, edición, aprobación y calendario simulado.</p>
         </article>
         <article class="api-card" data-qa-card>
@@ -1953,8 +1961,8 @@
 
     <section class="slide" data-view="technical" data-chapter="Plan técnico">
       <span class="eyebrow">Profundización técnica · 04</span>
-      <h2>La base, el prototipo y el roadmap tienen límites claros.</h2>
-      <p class="lead">El hackathon demuestra Qurable Push Copilot dentro de Manager v2. La integración productiva y el aprendizaje avanzan después.</p>
+      <h2>El prototipo de un día abre un camino concreto hacia el piloto.</h2>
+      <p class="lead">Qurable aporta la base, Q-Leap valida la experiencia y el piloto conecta la operación real. Las expansiones permanecen en backlog.</p>
 
       <div class="build-grid" style="margin-top:24px">
         <article class="build-column now" data-qa-card>
@@ -1969,7 +1977,7 @@
           </ul>
         </article>
         <article class="build-column next" data-qa-card>
-          <span class="status proposed">NEW · Hackathon</span>
+          <span class="status proposed">NEW · Q-Leap</span>
           <h3 style="margin-top:14px">Prototipo de Push Copilot</h3>
           <ul>
             <li>Contrato persistente de Push Recommendation</li>
@@ -1980,12 +1988,19 @@
           </ul>
         </article>
         <article class="build-column roadmap-column" data-qa-card>
-          <span class="status pilot">NEXT · Roadmap</span>
-          <h3 style="margin-top:14px">Piloto y evolución</h3>
+          <span class="status pilot">NEXT · Piloto</span>
+          <h3 style="margin-top:14px">Validación real</h3>
           <ul>
             <li>Adaptador Push, device tokens y audiencia seed</li>
             <li>Consentimiento, suppression, quiet hours y frequency caps</li>
             <li>Taxonomía delivered, opened, clicked y converted</li>
+            <li>Medición básica y grupo de control</li>
+          </ul>
+        </article>
+        <article class="build-column backlog-column" data-qa-card>
+          <span class="status backlog">BACKLOG</span>
+          <h3 style="margin-top:14px">Evolución de producto</h3>
+          <ul>
             <li>Funnel, atribución y grupos de control</li>
             <li>Clusterización y propensity scoring</li>
             <li>Dashboard agentic, optimización y autonomía gradual</li>
@@ -2067,7 +2082,7 @@
       demoStatus.textContent = 'Recomendada';
       approveButton.textContent = 'Aprobar y programar';
       approveButton.disabled = false;
-      demoMessage.textContent = 'El envío real queda en el roadmap; esta acción actualiza el calendario de la demo.';
+      demoMessage.textContent = 'Esta acción actualiza el calendario de la demo. El piloto incorpora el envío real.';
     }
 
     approveButton.addEventListener('click', scheduleDemo);
