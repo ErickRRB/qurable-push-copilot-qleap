@@ -1,6 +1,6 @@
-# Qurable Push Copilot · Q-Leap
+# Qurable Manager v2 · Qurable Push Copilot
 
-Presentación HTML interactiva de una propuesta conceptual para un MVP Q-Leap de un día, enfocado en recomendaciones inteligentes de notificaciones push.
+Presentación HTML interactiva de una nueva funcionalidad propuesta para Qurable Manager v2: Qurable Push Copilot. El prototipo se prepara en un día durante el hackathon Q-Leap.
 
 La narrativa muestra:
 
@@ -8,17 +8,30 @@ La narrativa muestra:
 2. Una bandeja priorizada para mañana y la semana.
 3. La anatomía de una recomendación explicable.
 4. La revisión y programación humana.
-5. La separación entre capacidades existentes, propuesta Q-Leap y piloto.
+5. La separación entre capacidades existentes, funcionalidad nueva y roadmap.
 6. Guardrails, alcance de un día y roadmap.
 7. Una pestaña de profundización técnica basada en la API V2 publicada por Qurable.
 
 El brainstorming mayor incluye Audiencias inteligentes por clusterización, Dashboard configurable, Push complejas inteligentes y Funnel adaptativo. La demo profundiza el foco Push; los demás conceptos permanecen como roadmap.
 
+Jerarquía de nombres:
+
+- Qurable: marca y plataforma completa.
+- Qurable Manager v2: producto enterprise.
+- Qurable Push Copilot: nueva funcionalidad propuesta dentro de Manager v2.
+- Q-Leap: hackathon donde se construye y presenta el prototipo.
+
+Estados visuales:
+
+- `EXISTS`: capacidad disponible en Qurable Manager v2 o Qurable API.
+- `NEW`: parte de Qurable Push Copilot prototipada durante el hackathon.
+- `NEXT`: integración productiva o roadmap posterior.
+
 La vista técnica distingue:
 
 - capacidades publicadas: Insights MCP, Segments, Audiences, Activation Jobs, Events, Dashboards y Widgets;
-- construcción inmediata: recomendador, workflow humano, políticas y adaptador Push;
-- roadmap: funnel atribuible, clusterización, optimización y autonomía gradual.
+- construcción durante el hackathon: recomendador, workflow humano, políticas demo y calendario simulado;
+- roadmap: adaptador Push, operación productiva, funnel atribuible, clusterización, optimización y autonomía gradual.
 
 Fuente técnica: <https://docs.qurable.co/api-docs/v2>.
 
