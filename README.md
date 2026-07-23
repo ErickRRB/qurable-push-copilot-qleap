@@ -2,6 +2,8 @@
 
 Presentación HTML interactiva de una nueva funcionalidad propuesta para Qurable Manager v2: Qurable Push Copilot. El prototipo se prepara en un día durante el hackathon Q-Leap.
 
+Al entrar, una portada visual del Grupo 3 ocupa la pantalla. Un click, Enter, Espacio o Escape abre la presentación.
+
 La narrativa muestra:
 
 1. El problema operativo de marketing.
@@ -38,6 +40,7 @@ Fuente técnica: <https://docs.qurable.co/api-docs/v2>.
 ## Contenido
 
 - `index.html`: presentación responsive e interacción de aprobación simulada.
+- `assets/qleap-grupo-3.png`: imagen de entrada de la demo.
 
 ## Alcance
 

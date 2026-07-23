@@ -40,6 +40,8 @@
       font-family: "Bricolage Grotesque", sans-serif;
     }
 
+    body.is-gated { overflow: hidden; }
+
     body::before {
       content: "";
       position: fixed;
@@ -55,6 +57,88 @@
 
     button { font: inherit; }
     strong.product-term { font-weight: 800; }
+
+    .entry-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: grid;
+      width: 100%;
+      height: 100%;
+      padding: clamp(18px, 4vw, 44px);
+      place-items: center;
+      overflow: hidden;
+      border: 0;
+      color: #fff;
+      background:
+        radial-gradient(circle at 50% 35%, rgba(239, 106, 46, .18), transparent 40%),
+        #11100f;
+      cursor: pointer;
+      transition: opacity .45s ease, visibility .45s ease;
+    }
+
+    .entry-screen::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: .16;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, .08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, .08) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+
+    .entry-screen.is-leaving {
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .entry-frame {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      justify-items: center;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    .entry-image {
+      display: block;
+      width: min(60vh, 553px, calc(100vw - 40px));
+      max-height: calc(100vh - 128px);
+      object-fit: contain;
+      border: 2px solid rgba(255, 255, 255, .9);
+      border-radius: 20px;
+      box-shadow: 10px 10px 0 var(--orange);
+      transition: transform .35s ease;
+    }
+
+    .entry-screen:hover .entry-image,
+    .entry-screen:focus-visible .entry-image {
+      transform: translateY(-4px) scale(1.01);
+    }
+
+    .entry-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 15px;
+      border: 1.5px solid #fff;
+      border-radius: 999px;
+      background: var(--orange);
+      box-shadow: 4px 4px 0 #fff;
+      font: 800 10px "Azeret Mono", monospace;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+
+    .entry-action::after {
+      content: "→";
+      font-size: 15px;
+      line-height: 1;
+    }
 
     .progress {
       position: fixed;
@@ -1263,6 +1347,17 @@
     }
 
     @media (max-width: 560px) {
+      .entry-screen { padding: 16px; }
+      .entry-image {
+        width: min(calc(100vw - 32px), 520px);
+        max-height: calc(100vh - 116px);
+        border-radius: 15px;
+        box-shadow: 6px 6px 0 var(--orange);
+      }
+      .entry-action {
+        min-height: 44px;
+        padding: 9px 13px;
+      }
       .slide { padding: 94px 18px 54px; }
       h1 { font-size: clamp(34px, 9.5vw, 40px); }
       h2 { font-size: clamp(30px, 8vw, 34px); }
@@ -1312,6 +1407,7 @@
     }
 
     @media print {
+      .entry-screen,
       .progress,
       .topbar,
       .view-switch,
@@ -1320,9 +1416,20 @@
       body[data-active-view] .slide { display: grid; }
       body::before { display: none; }
     }
+
+    @media (prefers-reduced-motion: reduce) {
+      .entry-screen,
+      .entry-image { transition: none; }
+    }
   </style>
 </head>
-<body data-active-view="vision">
+<body class="is-gated" data-active-view="vision">
+  <button class="entry-screen" id="entryScreen" type="button" aria-label="Entrar a la demo de Qurable Push Copilot">
+    <span class="entry-frame">
+      <img class="entry-image" src="assets/qleap-grupo-3.png" alt="Personajes de Dragon Ball con el texto: nosotros somos el grupo 3 y vamos a exponer sobre la mitocondria">
+      <span class="entry-action">Click para ver la demo</span>
+    </span>
+  </button>
   <div class="progress" id="progress"></div>
   <div class="topbar">
     <span class="topbar-dot"></span>
@@ -1895,12 +2002,20 @@
     const progress = document.getElementById('progress');
     const slideCount = document.getElementById('slideCount');
     const chapter = document.getElementById('chapter');
+    const entryScreen = document.getElementById('entryScreen');
     const viewButtons = [...document.querySelectorAll('[data-view-button]')];
     const approveButton = document.getElementById('approveButton');
     const resetButton = document.getElementById('resetButton');
     const demoResult = document.getElementById('demoResult');
     const demoStatus = document.getElementById('demoStatus');
     const demoMessage = document.getElementById('demoMessage');
+
+    function dismissEntry() {
+      if (!entryScreen?.isConnected || entryScreen.classList.contains('is-leaving')) return;
+      entryScreen.classList.add('is-leaving');
+      document.body.classList.remove('is-gated');
+      setTimeout(() => entryScreen.remove(), 460);
+    }
 
     function getSlides() {
       return activeView === 'technical'
@@ -1957,12 +2072,20 @@
 
     approveButton.addEventListener('click', scheduleDemo);
     resetButton.addEventListener('click', resetDemo);
+    entryScreen.addEventListener('click', dismissEntry);
     viewButtons.forEach(button => {
       button.addEventListener('click', () => switchView(button.dataset.viewButton));
     });
     addEventListener('scroll', updatePosition, { passive: true });
     addEventListener('resize', updatePosition);
     addEventListener('keydown', event => {
+      if (entryScreen.isConnected && !entryScreen.classList.contains('is-leaving')) {
+        if (['Enter', ' ', 'Escape'].includes(event.key)) {
+          event.preventDefault();
+          dismissEntry();
+        }
+        return;
+      }
       if (['ArrowDown', 'ArrowRight', 'PageDown', ' '].includes(event.key)) {
         event.preventDefault();
         go(1);
@@ -1974,7 +2097,14 @@
       if (event.key === 'Home') slides[0].scrollIntoView({ behavior: 'smooth' });
       if (event.key === 'End') slides.at(-1).scrollIntoView({ behavior: 'smooth' });
     });
-    const requestedView = new URLSearchParams(location.search).get('view');
+    const searchParams = new URLSearchParams(location.search);
+    const requestedView = searchParams.get('view');
+    if (searchParams.get('skipIntro') === '1') {
+      entryScreen.remove();
+      document.body.classList.remove('is-gated');
+    } else {
+      entryScreen.focus({ preventScroll: true });
+    }
     if (requestedView === 'technical') switchView('technical');
     else updatePosition();
   </script>
